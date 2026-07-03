@@ -23,13 +23,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() { _loading = true; _error = null; });
     final result = await AuthService.register({
-      'prenom':   _prenomCtrl.text.trim(),
-      'nom':      _nomCtrl.text.trim(),
-      'email':    _emailCtrl.text.trim(),
-      'password': _passCtrl.text,
+      'prenom':                _prenomCtrl.text.trim(),
+      'nom':                   _nomCtrl.text.trim(),
+      'email':                 _emailCtrl.text.trim(),
+      'password':              _passCtrl.text,
       'password_confirmation': _passCtrl.text,
-      'role':     'patient',
-      'genre':    _genre,
+      'role':                  'patient',
+      'parcours':              'fajafric',
+      'genre':                 _genre,
     });
     if (!mounted) return;
     if (result['ok']) {
@@ -42,7 +43,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Créer un compte'), backgroundColor: Colors.white),
+      appBar: AppBar(title: const Text('Créer un compte')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -74,7 +75,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 14),
 
                 // Genre
-                const Text('Genre', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF374151))),
+                const Text('Genre', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
                 const SizedBox(height: 6),
                 Row(children: [
                   for (final g in ['homme', 'femme'])
@@ -91,7 +92,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 14),
 
                 // Mot de passe
-                const Text('Mot de passe', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF374151))),
+                const Text('Mot de passe', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _passCtrl,
@@ -140,7 +141,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF374151))),
+        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
         const SizedBox(height: 6),
         TextFormField(
           controller: ctrl,
