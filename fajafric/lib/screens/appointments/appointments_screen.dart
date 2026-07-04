@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import '../../theme/app_theme.dart';
 import '../../services/api_service.dart';
 import '../../models/appointment.dart';
-import 'new_appointment_screen.dart';
+import '../home/main_nav.dart'; // pour goToMedecins()
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -11,7 +11,11 @@ class AppointmentsScreen extends StatefulWidget {
   State<AppointmentsScreen> createState() => _AppointmentsScreenState();
 }
 
-class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTickerProviderStateMixin {
+// Clé globale pour forcer un reload depuis MainNav
+final appointmentsScreenKey = GlobalKey<AppointmentsScreenState>();
+
+// ignore: library_private_types_in_public_api — intentionnel pour GlobalKey
+class AppointmentsScreenState extends State<AppointmentsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabs;
   List<Appointment> _all = [];
   bool _loading = true;
@@ -20,6 +24,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
   void initState() { super.initState(); _tabs = TabController(length: 3, vsync: this); _load(); }
   @override
   void dispose() { _tabs.dispose(); super.dispose(); }
+
+  // Appelé depuis MainNav via GlobalKey pour recharger quand on revient sur l'onglet
+  void reload() => _load();
 
   Future<void> _load() async {
     final apts = await ApiService.getAppointments();
@@ -71,7 +78,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
             ]),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NewAppointmentScreen())).then((_) => _load()),
+        onPressed: () => goToMedecins(), // → onglet Médecins dans la sidebar
         backgroundColor: AppTheme.teal,
         icon: const Icon(Icons.add_rounded, color: Colors.white),
         label: const Text('Nouveau RDV', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),

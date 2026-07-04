@@ -25,7 +25,7 @@ class FajafricApp extends StatelessWidget {
       home: const SplashScreen(),
       routes: {
         '/login':  (_) => const LoginScreen(),
-        '/home':   (_) => const MainNav(),
+        '/home':   (_) => MainNav(key: mainNavKey),
       },
     );
   }

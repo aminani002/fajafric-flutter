@@ -54,7 +54,6 @@ class AppTheme {
         primary:    primary,
         secondary:  tealMid,
         surface:    bgCard,
-        background: bg,
         onPrimary:  white,
         onSurface:  textPrimary,
         outline:    border,

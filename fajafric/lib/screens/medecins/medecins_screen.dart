@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../services/api_service.dart';
-import '../appointments/new_appointment_screen.dart';
+import '../appointments/new_appointment_screen.dart'; // bottom sheet
 
 class MedecinsScreen extends StatefulWidget {
   const MedecinsScreen({super.key});
@@ -108,70 +108,166 @@ class _MedecinsScreenState extends State<MedecinsScreen> {
     final spec = m['specialite'] ?? 'Médecin généraliste';
     final pays = m['pays'] ?? '';
 
-    // Couleur basée sur la spécialité
     final colors = [AppTheme.teal, const Color(0xFF6366F1), const Color(0xFFF59E0B), const Color(0xFF10B981), const Color(0xFFEC4899)];
     final colorIdx = nom.codeUnits.fold(0, (a, b) => a + b) % colors.length;
     final avatarColor = colors[colorIdx];
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(children: [
-          // Avatar
-          Container(
-            width: 58, height: 58,
-            decoration: BoxDecoration(
-              color: avatarColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(child: Text(initials, style: TextStyle(
-              color: avatarColor, fontWeight: FontWeight.w800, fontSize: 18,
-            ))),
-          ),
-          const SizedBox(width: 14),
-          // Infos
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(nom, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppTheme.textPrimary)),
-            const SizedBox(height: 4),
+    return GestureDetector(
+      onTap: () => _showDoctorDetail(m, avatarColor),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              width: 58, height: 58,
               decoration: BoxDecoration(
-                color: avatarColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
+                color: avatarColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Text(spec, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: avatarColor)),
+              child: Center(child: Text(initials, style: TextStyle(
+                color: avatarColor, fontWeight: FontWeight.w800, fontSize: 18,
+              ))),
             ),
-            if (pays.isNotEmpty) ...[
+            const SizedBox(width: 14),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(nom, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppTheme.textPrimary)),
               const SizedBox(height: 4),
-              Row(children: [
-                const Icon(Icons.location_on_outlined, size: 12, color: AppTheme.inkSoft),
-                const SizedBox(width: 3),
-                Text(pays, style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
-              ]),
-            ],
-          ])),
-          // Bouton RDV
-          GestureDetector(
-            onTap: () => Navigator.push(context,
-              MaterialPageRoute(builder: (_) => NewAppointmentScreen(medecin: m))),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppTheme.primary,
-                borderRadius: BorderRadius.circular(12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(color: avatarColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                child: Text(spec, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: avatarColor)),
               ),
-              child: const Text('RDV', style: TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13,
-              )),
+              if (pays.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Row(children: [
+                  const Icon(Icons.location_on_outlined, size: 12, color: AppTheme.inkSoft),
+                  const SizedBox(width: 3),
+                  Text(pays, style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
+                ]),
+              ],
+            ])),
+            GestureDetector(
+              onTap: () => NewAppointmentScreen.show(context, medecin: m),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(12)),
+                child: const Text('RDV', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+              ),
             ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  void _showDoctorDetail(Map<String, dynamic> m, Color avatarColor) {
+    final nom     = 'Dr. ${m['prenom'] ?? ''} ${m['nom'] ?? ''}';
+    final spec    = m['specialite'] ?? 'Médecin généraliste';
+    final pays    = m['pays'] ?? '';
+    final bio     = m['bio'] as String?;
+    final initials = '${(m['prenom'] ?? ' ')[0]}${(m['nom'] ?? ' ')[0]}'.toUpperCase();
+    final soins   = (m['soins_actes'] as List<dynamic>?) ?? [];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        maxChildSize: 0.95,
+        minChildSize: 0.4,
+        builder: (_, ctrl) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-        ]),
+          child: Column(children: [
+            // Handle
+            const SizedBox(height: 12),
+            Center(child: Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
+            const SizedBox(height: 16),
+            Expanded(child: ListView(controller: ctrl, padding: const EdgeInsets.fromLTRB(24, 0, 24, 32), children: [
+              // Avatar + nom
+              Row(children: [
+                Container(
+                  width: 68, height: 68,
+                  decoration: BoxDecoration(color: avatarColor.withOpacity(0.12), borderRadius: BorderRadius.circular(18)),
+                  child: Center(child: Text(initials, style: TextStyle(color: avatarColor, fontWeight: FontWeight.w800, fontSize: 22))),
+                ),
+                const SizedBox(width: 16),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(nom, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: AppTheme.textPrimary)),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(color: avatarColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                    child: Text(spec, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: avatarColor)),
+                  ),
+                  if (pays.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Row(children: [
+                      const Icon(Icons.location_on_outlined, size: 13, color: AppTheme.inkSoft),
+                      const SizedBox(width: 3),
+                      Text(pays, style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
+                    ]),
+                  ],
+                ])),
+              ]),
+              const SizedBox(height: 24),
+
+              // Bio
+              if (bio != null && bio.isNotEmpty) ...[
+                const Text('À propos', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppTheme.textPrimary)),
+                const SizedBox(height: 8),
+                Text(bio, style: const TextStyle(fontSize: 13.5, color: AppTheme.inkSoft, height: 1.5)),
+                const SizedBox(height: 24),
+              ],
+
+              // Soins & Actes
+              if (soins.isNotEmpty) ...[
+                const Text('Soins & Actes', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppTheme.textPrimary)),
+                const SizedBox(height: 12),
+                Wrap(spacing: 8, runSpacing: 8, children: soins.map((s) => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: AppTheme.teal.withOpacity(0.08),
+                    border: Border.all(color: AppTheme.teal.withOpacity(0.25)),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(s.toString(), style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppTheme.teal)),
+                )).toList()),
+                const SizedBox(height: 28),
+              ] else ...[
+                const SizedBox(height: 8),
+              ],
+
+              // Bouton RDV
+              SizedBox(
+                width: double.infinity, height: 52,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.calendar_month_rounded, size: 18),
+                  label: const Text('Prendre un rendez-vous', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => NewAppointmentScreen(medecin: m)));
+                  },
+                ),
+              ),
+            ])),
+          ]),
+        ),
       ),
     );
   }

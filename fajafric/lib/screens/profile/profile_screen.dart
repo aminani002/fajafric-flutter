@@ -20,6 +20,88 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) setState(() => _user = u);
   }
 
+  Future<void> _changePassword() async {
+    final currentCtrl = TextEditingController();
+    final newCtrl     = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    bool loading = false;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              const Text('Changer le mot de passe', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 20),
+              _passField('Mot de passe actuel', currentCtrl),
+              const SizedBox(height: 12),
+              _passField('Nouveau mot de passe', newCtrl),
+              const SizedBox(height: 12),
+              _passField('Confirmer le nouveau', confirmCtrl),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.teal,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: loading ? null : () async {
+                    if (newCtrl.text != confirmCtrl.text) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Les mots de passe ne correspondent pas'), backgroundColor: Colors.red));
+                      return;
+                    }
+                    if (newCtrl.text.length < 8) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Minimum 8 caractères'), backgroundColor: Colors.red));
+                      return;
+                    }
+                    setS(() => loading = true);
+                    final res = await AuthService.changePassword(currentCtrl.text, newCtrl.text);
+                    setS(() => loading = false);
+                    if (!mounted) return;
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(res['ok'] ? 'Mot de passe mis à jour !' : (res['message'] ?? 'Erreur')),
+                      backgroundColor: res['ok'] ? AppTheme.teal : Colors.red,
+                    ));
+                  },
+                  child: loading
+                    ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                    : const Text('Mettre à jour', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                ),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _passField(String label, TextEditingController ctrl) => TextField(
+    controller: ctrl,
+    obscureText: true,
+    decoration: InputDecoration(
+      labelText: label,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.teal, width: 2)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    ),
+  );
+
   Future<void> _logout() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -116,7 +198,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _menuSection() {
     final items = [
-      _MenuItem(Icons.lock_outline_rounded, 'Changer le mot de passe', null, () {}),
+      _MenuItem(Icons.lock_outline_rounded, 'Changer le mot de passe', null, _changePassword),
       _MenuItem(Icons.notifications_outlined, 'Notifications', null, () {}),
       _MenuItem(Icons.help_outline_rounded, 'Aide & Support', null, () {}),
       _MenuItem(Icons.logout_rounded, 'Se déconnecter', AppTheme.red, _logout),

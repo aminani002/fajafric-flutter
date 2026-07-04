@@ -74,4 +74,23 @@ class AuthService {
   }
 
   static Future<bool> isLoggedIn() async => (await getToken()) != null;
+
+  // ── CHANGE PASSWORD ────────────────────────────────
+  static Future<Map<String, dynamic>> changePassword(
+      String currentPassword, String newPassword) async {
+    final token = await getToken();
+    final res = await http.put(
+      Uri.parse('${ApiConfig.baseUrl}/fajafric/change-password'),
+      headers: ApiConfig.headers(token),
+      body: jsonEncode({
+        'current_password':      currentPassword,
+        'password':              newPassword,
+        'password_confirmation': newPassword,
+      }),
+    ).timeout(ApiConfig.timeout);
+
+    final data = jsonDecode(res.body);
+    if (res.statusCode == 200) return {'ok': true};
+    return {'ok': false, 'message': data['message'] ?? 'Erreur'};
+  }
 }

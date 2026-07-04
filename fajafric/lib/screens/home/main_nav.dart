@@ -6,27 +6,47 @@ import '../messages/messages_screen.dart';
 import '../medecins/medecins_screen.dart';
 import '../profile/profile_screen.dart';
 
+// Clé globale — permet de changer d'onglet depuis n'importe quel écran
+final mainNavKey = GlobalKey<MainNavState>();
+
+/// Raccourci : aller sur l'onglet Médecins (index 3) depuis n'importe où
+void goToMedecins() => mainNavKey.currentState?.switchTab(3);
+
+/// Raccourci : aller sur l'onglet RDV (index 1)
+void goToRdv() => mainNavKey.currentState?.switchTab(1);
+
 class MainNav extends StatefulWidget {
   const MainNav({super.key});
   @override
-  State<MainNav> createState() => _MainNavState();
+  State<MainNav> createState() => MainNavState();
 }
 
-class _MainNavState extends State<MainNav> {
+class MainNavState extends State<MainNav> {
   int _index = 0;
 
-  final _screens = const [
-    HomeScreen(),
-    AppointmentsScreen(),
-    MessagesScreen(),
-    MedecinsScreen(),
-    ProfileScreen(),
+  late final List<Widget> _screens = [
+    const HomeScreen(),
+    AppointmentsScreen(key: appointmentsScreenKey),
+    const MessagesScreen(),
+    const MedecinsScreen(),
+    const ProfileScreen(),
   ];
+
+  /// Appelle depuis n'importe quel écran via mainNavKey.currentState?.switchTab(index)
+  void switchTab(int index) {
+    setState(() => _index = index);
+    if (index == 1) appointmentsScreenKey.currentState?.reload();
+  }
+
+  void _onTabSelected(int i) {
+    setState(() => _index = i);
+    if (i == 1) appointmentsScreenKey.currentState?.reload();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_index],
+      body: IndexedStack(index: _index, children: _screens),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: AppTheme.white,
@@ -41,10 +61,8 @@ class _MainNavState extends State<MainNav> {
         ),
         child: NavigationBar(
           selectedIndex: _index,
-          onDestinationSelected: (i) => setState(() => _index = i),
+          onDestinationSelected: _onTabSelected,
           backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          surfaceTintColor: Colors.transparent,
           indicatorColor: AppTheme.primary,
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: const [
