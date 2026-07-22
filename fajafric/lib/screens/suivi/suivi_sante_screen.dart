@@ -300,68 +300,80 @@ class _SuiviSanteScreenState extends State<SuiviSanteScreen> {
 
   void _openAddDialog() {
     final t = _currentType;
-    final ctrl1 = TextEditingController();
-    final ctrl2 = TextEditingController();
+    final ctrl1    = TextEditingController();
+    final ctrl2    = TextEditingController();
     final noteCtrl = TextEditingController();
 
     showModalBottomSheet(
-      context: context, isScrollControlled: true,
+      context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: Container(
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.92,
+        builder: (ctx, scrollCtrl) => Container(
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(
-              color: AppTheme.border, borderRadius: BorderRadius.circular(2)))),
-            const SizedBox(height: 20),
-            Row(children: [
-              Container(
-                width: 42, height: 42,
-                decoration: BoxDecoration(color: t.color.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
-                child: Icon(t.icon, color: t.color, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Text('Ajouter — ${t.label}',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppTheme.textPrimary)),
-            ]),
-            const SizedBox(height: 20),
-            if (t.hasTwoValues) ...[
-              Row(children: [
-                Expanded(child: _field(ctrl1, 'Systolique', 'Ex : 120', TextInputType.number)),
-                const SizedBox(width: 10),
-                Expanded(child: _field(ctrl2, 'Diastolique', 'Ex : 80', TextInputType.number)),
-              ]),
-            ] else
-              _field(ctrl1, '${t.label} (${t.unit})', t.hint, const TextInputType.numberWithOptions(decimal: true)),
-            const SizedBox(height: 12),
-            _field(noteCtrl, 'Note (optionnel)', 'Ex : après le sport, à jeun…', TextInputType.text),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity, height: 52,
-              child: StatefulBuilder(builder: (ctx, setBtn) => ElevatedButton(
-                onPressed: () {
-                  final v1 = double.tryParse(ctrl1.text.replaceAll(',', '.'));
-                  if (v1 == null) return;
-                  final entry = HealthEntry(
-                    type: t.key, value: v1,
-                    value2: t.hasTwoValues ? ctrl2.text.trim() : null,
-                    unit: t.unit, date: DateTime.now(),
-                    note: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim(),
-                  );
-                  _addEntry(entry);
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: t.color, foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                child: const Text('Enregistrer la mesure', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
-              )),
+          child: ListView(
+            controller: scrollCtrl,
+            padding: EdgeInsets.only(
+              left: 24, right: 24, top: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 32,
             ),
-          ]),
+            children: [
+              Center(child: Container(width: 40, height: 4,
+                decoration: BoxDecoration(color: AppTheme.border, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              Row(children: [
+                Container(
+                  width: 42, height: 42,
+                  decoration: BoxDecoration(color: t.color.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
+                  child: Icon(t.icon, color: t.color, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Ajouter — ${t.label}',
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppTheme.textPrimary))),
+              ]),
+              const SizedBox(height: 24),
+              if (t.hasTwoValues) ...[
+                Row(children: [
+                  Expanded(child: _field(ctrl1, 'Systolique', 'Ex : 120', TextInputType.number)),
+                  const SizedBox(width: 10),
+                  Expanded(child: _field(ctrl2, 'Diastolique', 'Ex : 80', TextInputType.number)),
+                ]),
+              ] else
+                _field(ctrl1, '${t.label} (${t.unit})', t.hint, const TextInputType.numberWithOptions(decimal: true)),
+              const SizedBox(height: 16),
+              _field(noteCtrl, 'Note (optionnel)', 'Ex : après le sport, à jeun…', TextInputType.text),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity, height: 52,
+                child: ElevatedButton(
+                  onPressed: () {
+                    final v1 = double.tryParse(ctrl1.text.replaceAll(',', '.'));
+                    if (v1 == null) return;
+                    final entry = HealthEntry(
+                      type: t.key, value: v1,
+                      value2: t.hasTwoValues ? ctrl2.text.trim() : null,
+                      unit: t.unit, date: DateTime.now(),
+                      note: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim(),
+                    );
+                    _addEntry(entry);
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: t.color, foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Text('Enregistrer la mesure',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -22,7 +22,16 @@ class _MessagesScreenState extends State<MessagesScreen> {
   Future<void> _load() async {
     final apts = await ApiService.getAppointments();
     if (mounted) setState(() {
-      _chats = apts.where((a) => ['chat','teleconsultation'].contains(a.type)).toList();
+      // Grouper par médecin — une seule conversation par médecin (style WhatsApp)
+      final Map<int, Appointment> byDoctor = {};
+      for (final apt in apts) {
+        final existing = byDoctor[apt.medecin.id];
+        if (existing == null || apt.dateHeure.compareTo(existing.dateHeure) > 0) {
+          byDoctor[apt.medecin.id] = apt;
+        }
+      }
+      _chats = byDoctor.values.toList()
+        ..sort((a, b) => b.dateHeure.compareTo(a.dateHeure));
       _loading = false;
     });
   }
@@ -61,31 +70,43 @@ class _MessagesScreenState extends State<MessagesScreen> {
               (_, i) {
                 final apt = _chats[i];
                 final initials = apt.medecin.initials;
-                final colors = [AppTheme.teal, const Color(0xFF6366F1), const Color(0xFF10B981)];
-                final c = colors[i % colors.length];
+                final spec = apt.medecin.specialite ?? 'Médecin généraliste';
+                final colors = [AppTheme.teal, const Color(0xFF6366F1), const Color(0xFF10B981), const Color(0xFFF59E0B), const Color(0xFFEC4899)];
+                final colorIdx = apt.medecin.fullName.codeUnits.fold(0, (a, b) => a + b) % colors.length;
+                final c = colors[colorIdx];
+                final dt = DateTime.tryParse(apt.dateHeure);
+                final dateStr = dt != null ? DateFormat('d MMM', 'fr_FR').format(dt) : '';
                 return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2))],
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    leading: Container(
-                      width: 50, height: 50,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [c, c.withOpacity(0.7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                        borderRadius: BorderRadius.circular(14),
+                  margin: const EdgeInsets.only(bottom: 1),
+                  color: Colors.white,
+                  child: Column(children: [
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      leading: Container(
+                        width: 54, height: 54,
+                        decoration: BoxDecoration(
+                          color: c.withOpacity(0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(child: Text(initials, style: TextStyle(color: c, fontWeight: FontWeight.w800, fontSize: 17))),
                       ),
-                      child: Center(child: Text(initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16))),
+                      title: Text(apt.medecin.fullName,
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppTheme.textPrimary)),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 3),
+                        child: Text(spec,
+                          style: const TextStyle(fontSize: 13, color: AppTheme.inkSoft),
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ),
+                      trailing: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Text(dateStr, style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
+                        const SizedBox(height: 4),
+                        const Icon(Icons.chevron_right_rounded, color: AppTheme.border, size: 18),
+                      ]),
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(appointment: apt))),
                     ),
-                    title: Text(apt.medecin.fullName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5)),
-                    subtitle: Text(apt.typeLabel, style: TextStyle(fontSize: 12.5, color: c, fontWeight: FontWeight.w500)),
-                    trailing: const Icon(Icons.chevron_right_rounded, color: AppTheme.inkSoft),
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(appointment: apt))),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
+                    const Divider(height: 1, indent: 86),
+                  ]),
                 );
               },
               childCount: _chats.length,

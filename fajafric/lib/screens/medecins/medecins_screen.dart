@@ -31,7 +31,9 @@ class _MedecinsScreenState extends State<MedecinsScreen> {
     setState(() {
       _filtered = _medecins.where((m) =>
         '${m['prenom']} ${m['nom']}'.toLowerCase().contains(query) ||
-        (m['specialite'] ?? '').toLowerCase().contains(query)
+        (m['specialite'] ?? '').toLowerCase().contains(query) ||
+        (m['ville'] ?? '').toLowerCase().contains(query) ||
+        (m['pays'] ?? '').toLowerCase().contains(query)
       ).toList();
     });
   }
@@ -69,7 +71,7 @@ class _MedecinsScreenState extends State<MedecinsScreen> {
             controller: _searchCtrl,
             onChanged: _search,
             decoration: InputDecoration(
-              hintText: 'Rechercher nom, spécialité...',
+              hintText: 'Rechercher nom, spécialité, ville...',
               prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.inkSoft),
               filled: true, fillColor: Colors.white,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
@@ -106,7 +108,9 @@ class _MedecinsScreenState extends State<MedecinsScreen> {
     final initials = '${(m['prenom'] ?? ' ')[0]}${(m['nom'] ?? ' ')[0]}'.toUpperCase();
     final nom  = 'Dr. ${m['prenom'] ?? ''} ${m['nom'] ?? ''}';
     final spec = m['specialite'] ?? 'Médecin généraliste';
-    final pays = m['pays'] ?? '';
+    final ville = (m['ville'] as String?)?.isNotEmpty == true ? m['ville'] as String : null;
+    final pays  = (m['pays']  as String?)?.isNotEmpty == true ? m['pays']  as String : null;
+    final lieu  = ville ?? pays ?? '';
 
     final colors = [AppTheme.teal, const Color(0xFF6366F1), const Color(0xFFF59E0B), const Color(0xFF10B981), const Color(0xFFEC4899)];
     final colorIdx = nom.codeUnits.fold(0, (a, b) => a + b) % colors.length;
@@ -143,12 +147,12 @@ class _MedecinsScreenState extends State<MedecinsScreen> {
                 decoration: BoxDecoration(color: avatarColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
                 child: Text(spec, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: avatarColor)),
               ),
-              if (pays.isNotEmpty) ...[
-                const SizedBox(height: 4),
+              if (lieu.isNotEmpty) ...[
+                const SizedBox(height: 5),
                 Row(children: [
-                  const Icon(Icons.location_on_outlined, size: 12, color: AppTheme.inkSoft),
+                  const Icon(Icons.location_on_rounded, size: 13, color: AppTheme.teal),
                   const SizedBox(width: 3),
-                  Text(pays, style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
+                  Text(lieu, style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft, fontWeight: FontWeight.w500)),
                 ]),
               ],
             ])),
@@ -169,7 +173,9 @@ class _MedecinsScreenState extends State<MedecinsScreen> {
   void _showDoctorDetail(Map<String, dynamic> m, Color avatarColor) {
     final nom     = 'Dr. ${m['prenom'] ?? ''} ${m['nom'] ?? ''}';
     final spec    = m['specialite'] ?? 'Médecin généraliste';
-    final pays    = m['pays'] ?? '';
+    final ville   = (m['ville'] as String?)?.isNotEmpty == true ? m['ville'] as String : null;
+    final pays    = (m['pays']  as String?)?.isNotEmpty == true ? m['pays']  as String : null;
+    final lieu    = ville != null && pays != null ? '$ville, $pays' : ville ?? pays ?? '';
     final bio     = m['bio'] as String?;
     final initials = '${(m['prenom'] ?? ' ')[0]}${(m['nom'] ?? ' ')[0]}'.toUpperCase();
     final soins   = (m['soins_actes'] as List<dynamic>?) ?? [];
@@ -210,12 +216,12 @@ class _MedecinsScreenState extends State<MedecinsScreen> {
                     decoration: BoxDecoration(color: avatarColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
                     child: Text(spec, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: avatarColor)),
                   ),
-                  if (pays.isNotEmpty) ...[
+                  if (lieu.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Row(children: [
-                      const Icon(Icons.location_on_outlined, size: 13, color: AppTheme.inkSoft),
+                      const Icon(Icons.location_on_rounded, size: 13, color: AppTheme.teal),
                       const SizedBox(width: 3),
-                      Text(pays, style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
+                      Text(lieu, style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft, fontWeight: FontWeight.w500)),
                     ]),
                   ],
                 ])),

@@ -137,6 +137,101 @@ class ApiService {
     return null;
   }
 
+  // ── MODIFIER PROFIL ────────────────────────────────────────
+  static Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async {
+    final res = await http.put(
+      Uri.parse('${ApiConfig.baseUrl}/fajafric/profile'),
+      headers: await _headers(),
+      body: jsonEncode(data),
+    ).timeout(ApiConfig.timeout).catchError((_) => http.Response('{"ok":false}', 500));
+    final parsed = _parse(res);
+    if (parsed is Map<String, dynamic>) return parsed;
+    return {'ok': res.statusCode == 200};
+  }
+
+  // ── MÉDECIN — PLANNING ─────────────────────────────────────────────────
+  static Future<List<DoctorAppointment>> getDoctorAppointments() async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/fajafric/doctor/appointments'),
+      headers: await _headers(),
+    ).timeout(ApiConfig.timeout).catchError((_) => http.Response('[]', 200));
+    final data = _parse(res);
+    List raw = [];
+    if (data is List) raw = data;
+    else if (data is Map && data['appointments'] != null) raw = data['appointments'];
+    else if (data is Map && data['data'] != null) raw = data['data'];
+    return raw.map((e) => DoctorAppointment.fromJson(e)).toList();
+  }
+
+  static Future<bool> updateAppointmentStatut(int id, String statut) async {
+    final res = await http.put(
+      Uri.parse('${ApiConfig.baseUrl}/fajafric/appointments/$id/statut'),
+      headers: await _headers(),
+      body: jsonEncode({'statut': statut}),
+    ).timeout(ApiConfig.timeout).catchError((_) => http.Response('{}', 500));
+    return res.statusCode == 200;
+  }
+
+  // ── MÉDECIN — PROFIL ───────────────────────────────────────────────────
+  static Future<Map<String, dynamic>?> getDoctorProfile() async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/fajafric/doctor/profile'),
+      headers: await _headers(),
+    ).timeout(ApiConfig.timeout).catchError((_) => http.Response('{}', 200));
+    final data = _parse(res);
+    if (data is Map<String, dynamic>) return data;
+    return null;
+  }
+
+  static Future<bool> updateDoctorProfile(Map<String, dynamic> data) async {
+    final res = await http.put(
+      Uri.parse('${ApiConfig.baseUrl}/fajafric/doctor/profile'),
+      headers: await _headers(),
+      body: jsonEncode(data),
+    ).timeout(ApiConfig.timeout).catchError((_) => http.Response('{}', 500));
+    return res.statusCode == 200;
+  }
+
+  // ── MÉDECIN — RAPPORTS ─────────────────────────────────────────────────
+  static Future<bool> createReport(int rdvId, Map<String, dynamic> data) async {
+    final res = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/fajafric/appointments/$rdvId/report'),
+      headers: await _headers(),
+      body: jsonEncode(data),
+    ).timeout(ApiConfig.timeout).catchError((_) => http.Response('{}', 500));
+    return res.statusCode == 200 || res.statusCode == 201;
+  }
+
+  static Future<Map<String, dynamic>?> getReportForRdv(int rdvId) async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/fajafric/appointments/$rdvId/report'),
+      headers: await _headers(),
+    ).timeout(ApiConfig.timeout).catchError((_) => http.Response('{}', 200));
+    final data = _parse(res);
+    if (data is Map<String, dynamic>) return data;
+    return null;
+  }
+
+  // ── MÉDECIN — ORDONNANCES ──────────────────────────────────────────────
+  static Future<bool> createPrescription(int rdvId, Map<String, dynamic> data) async {
+    final res = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/fajafric/appointments/$rdvId/prescription'),
+      headers: await _headers(),
+      body: jsonEncode(data),
+    ).timeout(ApiConfig.timeout).catchError((_) => http.Response('{}', 500));
+    return res.statusCode == 200 || res.statusCode == 201;
+  }
+
+  static Future<Map<String, dynamic>?> getPrescriptionForRdv(int rdvId) async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/fajafric/appointments/$rdvId/prescription'),
+      headers: await _headers(),
+    ).timeout(ApiConfig.timeout).catchError((_) => http.Response('{}', 200));
+    final data = _parse(res);
+    if (data is Map<String, dynamic>) return data;
+    return null;
+  }
+
   // ── NOTIFICATIONS (non dispo côté Laravel pour l'instant) ──
   static Future<List<dynamic>> getNotifications() async => [];
   static Future<void> markAllRead() async {}

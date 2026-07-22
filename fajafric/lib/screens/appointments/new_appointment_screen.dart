@@ -44,7 +44,6 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
     {'value': 'cabinet',          'label': 'En cabinet',       'icon': Icons.local_hospital_outlined},
     {'value': 'teleconsultation', 'label': 'Téléconsultation', 'icon': Icons.videocam_outlined},
     {'value': 'deplacement',      'label': 'Déplacement',      'icon': Icons.directions_car_outlined},
-    {'value': 'chat',             'label': 'Chat médical',     'icon': Icons.chat_outlined},
   ];
 
   List<dynamic> get _filteredDoctors {

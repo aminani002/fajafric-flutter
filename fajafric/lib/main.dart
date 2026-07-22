@@ -5,6 +5,7 @@ import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/main_nav.dart';
+import 'screens/doctor/doctor_main_nav.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +27,7 @@ class FajafricApp extends StatelessWidget {
       routes: {
         '/login':  (_) => const LoginScreen(),
         '/home':   (_) => MainNav(key: mainNavKey),
+        '/doctor': (_) => DoctorMainNav(key: doctorNavKey),
       },
     );
   }

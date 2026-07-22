@@ -31,7 +31,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final result = await AuthService.login(_emailCtrl.text.trim(), _passCtrl.text);
     if (!mounted) return;
     if (result['ok']) {
-      Navigator.of(context).pushReplacementNamed('/home');
+      final user = result['user'];
+      final route = (user?.role == 'medecin') ? '/doctor' : '/home';
+      Navigator.of(context).pushReplacementNamed(route);
     } else {
       setState(() { _error = result['message']; _loading = false; });
     }

@@ -1,3 +1,72 @@
+// ── Patient (vue médecin) ─────────────────────────────────────────────────────
+class Patient {
+  final int id;
+  final String prenom;
+  final String nom;
+  final String? photo;
+  final String? pathologie;
+  final String? genre;
+  final String? pays;
+
+  Patient({required this.id, required this.prenom, required this.nom,
+    this.photo, this.pathologie, this.genre, this.pays});
+
+  factory Patient.fromJson(Map<String, dynamic> j) => Patient(
+    id: j['id'] ?? 0, prenom: j['prenom'] ?? '', nom: j['nom'] ?? '',
+    photo: j['photo_profil'], pathologie: j['pathologie'],
+    genre: j['genre'], pays: j['pays'],
+  );
+
+  String get fullName => '$prenom $nom';
+  String get initials =>
+      '${prenom.isNotEmpty ? prenom[0] : ''}${nom.isNotEmpty ? nom[0] : ''}';
+}
+
+// ── RDV côté médecin ──────────────────────────────────────────────────────────
+class DoctorAppointment {
+  final int id;
+  final Patient patient;
+  final String dateHeure;
+  final String type;
+  final String statut;
+  final String? motif;
+  final bool hasReport;
+  final bool hasOrdonnance;
+
+  DoctorAppointment({
+    required this.id, required this.patient, required this.dateHeure,
+    required this.type, required this.statut,
+    this.motif, this.hasReport = false, this.hasOrdonnance = false,
+  });
+
+  factory DoctorAppointment.fromJson(Map<String, dynamic> j) => DoctorAppointment(
+    id: j['id'],
+    patient: Patient.fromJson(j['patient'] ?? {}),
+    dateHeure: j['date_heure'] ?? '',
+    type: j['type'] ?? 'cabinet',
+    statut: j['statut'] ?? 'en_attente',
+    motif: j['motif'],
+    hasReport: j['has_report'] ?? false,
+    hasOrdonnance: j['has_ordonnance'] ?? false,
+  );
+
+  String get typeLabel => {
+    'cabinet': 'En cabinet', 'teleconsultation': 'Téléconsultation',
+    'deplacement': 'Déplacement',
+  }[type] ?? type;
+
+  StatutConfig get statutConfig {
+    switch (statut) {
+      case 'confirme':   return StatutConfig('Confirmé',   0xFF10B981, 0xFFD1FAE5);
+      case 'en_attente': return StatutConfig('En attente', 0xFFF59E0B, 0xFFFEF3C7);
+      case 'termine':    return StatutConfig('Terminé',    0xFF6B7280, 0xFFF3F4F6);
+      case 'annule':     return StatutConfig('Annulé',     0xFFEF4444, 0xFFFEE2E2);
+      default:           return StatutConfig(statut,       0xFF6B7280, 0xFFF3F4F6);
+    }
+  }
+}
+
+// ── Médecin (vue patient) ─────────────────────────────────────────────────────
 class Medecin {
   final int id;
   final String prenom;

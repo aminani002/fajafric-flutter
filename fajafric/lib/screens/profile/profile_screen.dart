@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
+import '../../services/api_service.dart';
 import '../../models/user.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -19,6 +21,143 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final u = await AuthService.getUser();
     if (mounted) setState(() => _user = u);
   }
+
+  Future<void> _editProfile() async {
+    if (_user == null) return;
+    final prenomCtrl = TextEditingController(text: _user!.prenom);
+    final nomCtrl    = TextEditingController(text: _user!.nom);
+    final pathCtrl   = TextEditingController(text: _user!.pathologie ?? '');
+    final paysCtrl   = TextEditingController(text: _user!.pays ?? '');
+    String? selectedGenre = _user!.genre;
+    bool loading = false;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => DraggableScrollableSheet(
+          initialChildSize: 0.85,
+          maxChildSize: 0.95,
+          minChildSize: 0.5,
+          builder: (_, scrollCtrl) => Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: ListView(
+              controller: scrollCtrl,
+              padding: EdgeInsets.only(
+                left: 24, right: 24, top: 16,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
+              ),
+              children: [
+                Center(child: Container(width: 40, height: 4,
+                  decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
+                const SizedBox(height: 20),
+                Row(children: [
+                  const Text('Modifier le profil',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(ctx),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                      child: const Icon(Icons.close_rounded, size: 18, color: AppTheme.inkSoft),
+                    ),
+                  ),
+                ]),
+                const SizedBox(height: 24),
+                _editField(prenomCtrl, 'Prénom', Icons.person_outline_rounded),
+                const SizedBox(height: 14),
+                _editField(nomCtrl, 'Nom', Icons.person_outline_rounded),
+                const SizedBox(height: 14),
+                _editField(paysCtrl, 'Pays', Icons.flag_outlined),
+                const SizedBox(height: 14),
+                _editField(pathCtrl, 'Pathologie (optionnel)', Icons.medical_information_outlined),
+                const SizedBox(height: 14),
+                // Genre selector
+                const Text('Genre', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+                const SizedBox(height: 8),
+                Row(children: [
+                  for (final g in [('homme', 'Homme', Icons.male_rounded), ('femme', 'Femme', Icons.female_rounded)])
+                    Expanded(child: Padding(
+                      padding: EdgeInsets.only(right: g.$1 == 'homme' ? 8 : 0),
+                      child: GestureDetector(
+                        onTap: () => setS(() => selectedGenre = g.$1),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: selectedGenre == g.$1 ? AppTheme.teal.withOpacity(0.1) : AppTheme.bgCard,
+                            border: Border.all(color: selectedGenre == g.$1 ? AppTheme.teal : AppTheme.border,
+                              width: selectedGenre == g.$1 ? 2 : 1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                            Icon(g.$3, size: 18, color: selectedGenre == g.$1 ? AppTheme.teal : AppTheme.inkSoft),
+                            const SizedBox(width: 6),
+                            Text(g.$2, style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: selectedGenre == g.$1 ? AppTheme.teal : AppTheme.inkSoft,
+                            )),
+                          ]),
+                        ),
+                      ),
+                    )),
+                ]),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity, height: 52,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.teal,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    onPressed: loading ? null : () async {
+                      setS(() => loading = true);
+                      final res = await ApiService.updateProfile({
+                        'prenom': prenomCtrl.text.trim(),
+                        'nom': nomCtrl.text.trim(),
+                        'pays': paysCtrl.text.trim(),
+                        'pathologie': pathCtrl.text.trim(),
+                        if (selectedGenre != null) 'genre': selectedGenre,
+                      });
+                      setS(() => loading = false);
+                      if (!mounted) return;
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(res['message'] ?? 'Profil mis à jour !'),
+                        backgroundColor: AppTheme.teal,
+                      ));
+                      _load(); // refresh
+                    },
+                    child: loading
+                      ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                      : const Text('Enregistrer', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _editField(TextEditingController ctrl, String label, IconData icon) => TextField(
+    controller: ctrl,
+    decoration: InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, size: 20, color: AppTheme.inkSoft),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppTheme.teal, width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    ),
+  );
 
   Future<void> _changePassword() async {
     final currentCtrl = TextEditingController();
@@ -156,14 +295,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 20, bottom: 32, left: 20, right: 20),
       child: Column(children: [
-        Container(
-          width: 88, height: 88,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withOpacity(0.4), width: 3),
-          ),
-          child: Center(child: Text(_user!.initials, style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w800))),
+        GestureDetector(
+          onTap: _editProfile,
+          child: Stack(children: [
+            Container(
+              width: 88, height: 88,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withOpacity(0.4), width: 3),
+              ),
+              child: Center(child: Text(_user!.initials, style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w800))),
+            ),
+            Positioned(
+              bottom: 0, right: 0,
+              child: Container(
+                width: 26, height: 26,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppTheme.primary, width: 1.5),
+                ),
+                child: const Icon(Icons.edit_rounded, size: 14, color: AppTheme.primary),
+              ),
+            ),
+          ]),
         ),
         const SizedBox(height: 14),
         Text(_user!.fullName, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
@@ -198,8 +354,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _menuSection() {
     final items = [
+      _MenuItem(Icons.edit_outlined, 'Modifier le profil', null, _editProfile),
       _MenuItem(Icons.lock_outline_rounded, 'Changer le mot de passe', null, _changePassword),
-      _MenuItem(Icons.notifications_outlined, 'Notifications', null, () {}),
       _MenuItem(Icons.help_outline_rounded, 'Aide & Support', null, () {}),
       _MenuItem(Icons.logout_rounded, 'Se déconnecter', AppTheme.red, _logout),
     ];

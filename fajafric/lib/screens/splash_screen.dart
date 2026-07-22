@@ -32,7 +32,13 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 2800));
     if (!mounted) return;
     final loggedIn = await AuthService.isLoggedIn();
-    Navigator.of(context).pushReplacementNamed(loggedIn ? '/home' : '/login');
+    if (!loggedIn) {
+      Navigator.of(context).pushReplacementNamed('/login');
+      return;
+    }
+    final user = await AuthService.getUser();
+    final route = user?.role == 'medecin' ? '/doctor' : '/home';
+    Navigator.of(context).pushReplacementNamed(route);
   }
 
   @override

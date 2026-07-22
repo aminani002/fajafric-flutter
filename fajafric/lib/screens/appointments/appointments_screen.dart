@@ -8,7 +8,7 @@ import '../home/main_nav.dart'; // pour goToMedecins()
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
   @override
-  State<AppointmentsScreen> createState() => _AppointmentsScreenState();
+  State<AppointmentsScreen> createState() => AppointmentsScreenState();
 }
 
 // Clé globale pour forcer un reload depuis MainNav
